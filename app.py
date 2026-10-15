@@ -11,7 +11,7 @@ from datetime import datetime
 # ==========================================
 st.set_page_config(page_title="₹1 Cr Equity Portfolio", page_icon="📈", layout="wide")
 
-# Custom CSS for an Enterprise Dashboard Look
+# Custom CSS for an Executive Dark Dashboard Look
 st.markdown("""
     <style>
         /* Hide Streamlit default branding */
@@ -19,25 +19,28 @@ st.markdown("""
         footer {visibility: hidden;}
         header {visibility: hidden;}
         
-        /* Style the Metric Cards */
+        /* Style the Metric Cards for Dark Theme */
         div[data-testid="stMetric"] {
-            background-color: rgba(28, 131, 225, 0.05);
-            border: 1px solid rgba(28, 131, 225, 0.2);
-            border-left: 5px solid #1c83e1;
+            background-color: #1a1c24;
+            border: 1px solid #2b2e3b;
+            border-left: 4px solid #1c83e1;
             padding: 15px 20px;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
             transition: all 0.3s ease;
         }
         div[data-testid="stMetric"]:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-            border-left: 5px solid #00C851;
+            border-left: 4px solid #00C851;
+            background-color: #21242f;
         }
         
         /* Clean up Tabs */
         .stTabs [data-baseweb="tab-list"] {
-            gap: 24px;
+            background-color: #1a1c24;
+            border-radius: 8px;
+            padding: 5px 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         .stTabs [data-baseweb="tab"] {
             height: 50px;
@@ -139,14 +142,13 @@ total_value = df_filtered['Market Value (INR)'].sum()
 total_pnl = df_filtered['Unrealized P/L (INR)'].sum()
 overall_return = (total_pnl / total_invested) * 100 if total_invested > 0 else 0
 
-# These will now look like premium boxed cards because of our custom CSS above!
 kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 kpi1.metric("Invested Capital", f"₹{total_invested:,.0f}")
 kpi2.metric("Current Value", f"₹{total_value:,.0f}", delta=f"₹{total_pnl:,.0f}")
 kpi3.metric("Unrealized P&L", f"₹{total_pnl:,.0f}")
 kpi4.metric("Net Return", f"{overall_return:.2f}%")
 
-st.markdown("<br>", unsafe_allow_html=True) # Spacer
+st.markdown("<br>", unsafe_allow_html=True)
 
 # ==========================================
 # 5. MAIN DASHBOARD TABS
@@ -157,27 +159,26 @@ tab1, tab2, tab3, tab4 = st.tabs(["📊 Allocation Overview", "📈 Historical T
 with tab1:
     col1, col2 = st.columns(2)
     
-    # Premium Chart Styling Function
     def apply_premium_layout(fig):
         fig.update_layout(
             plot_bgcolor='rgba(0,0,0,0)', 
             paper_bgcolor='rgba(0,0,0,0)',
             margin=dict(t=40, b=40, l=0, r=0),
-            font=dict(size=14)
+            font=dict(size=14, color="#fafafa")
         )
         return fig
 
     with col1:
         fig_sec = px.pie(df_filtered, values='Market Value (INR)', names='Sector', 
                          title='Sector Exposure', hole=0.5, 
-                         color_discrete_sequence=px.colors.qualitative.Prism)
+                         color_discrete_sequence=px.colors.qualitative.Pastel)
         fig_sec.update_traces(textposition='inside', textinfo='percent+label')
         st.plotly_chart(apply_premium_layout(fig_sec), use_container_width=True)
         
     with col2:
         fig_cap = px.pie(df_filtered, values='Market Value (INR)', names='Market Cap', 
                          title='Market Cap Exposure', hole=0.5, 
-                         color_discrete_sequence=px.colors.qualitative.Vivid)
+                         color_discrete_sequence=px.colors.qualitative.Set3)
         fig_cap.update_traces(textposition='inside', textinfo='percent+label')
         st.plotly_chart(apply_premium_layout(fig_cap), use_container_width=True)
     
@@ -214,7 +215,6 @@ with tab2:
             nifty_index = (1 + nifty.pct_change()).cumprod() * 100
             
             fig_trend = go.Figure()
-            # Smooth curved lines for a premium look (shape='spline')
             fig_trend.add_trace(go.Scatter(x=port_index.index, y=port_index, mode='lines', name='Simulated Portfolio', 
                                            line=dict(color='#00C851', width=3, shape='spline'), fill='tozeroy', fillcolor='rgba(0, 200, 81, 0.1)'))
             
@@ -224,8 +224,8 @@ with tab2:
             
             fig_trend.update_layout(
                 plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-                xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='rgba(128,128,128,0.2)'),
-                hovermode="x unified", margin=dict(t=20, b=40, l=0, r=0)
+                xaxis=dict(showgrid=False, color="#fafafa"), yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.1)', color="#fafafa"),
+                hovermode="x unified", margin=dict(t=20, b=40, l=0, r=0), font=dict(color="#fafafa")
             )
             st.plotly_chart(fig_trend, use_container_width=True)
         except Exception as e:
@@ -291,7 +291,12 @@ with tab4:
                 if not hist.empty:
                     fig_mini = px.area(hist, x=hist.index, y='Close', title=f"90-Day Price Action")
                     fig_mini.update_traces(line_color='#1c83e1', fillcolor='rgba(28, 131, 225, 0.2)')
-                    fig_mini.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='rgba(128,128,128,0.1)'), margin=dict(t=40, b=0, l=0, r=0))
+                    fig_mini.update_layout(
+                        plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', 
+                        xaxis=dict(showgrid=False, color="#fafafa"), 
+                        yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.1)', color="#fafafa"), 
+                        margin=dict(t=40, b=0, l=0, r=0), font=dict(color="#fafafa")
+                    )
                     st.plotly_chart(fig_mini, use_container_width=True)
                     
             except Exception as e:
