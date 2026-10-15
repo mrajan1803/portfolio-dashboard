@@ -9,15 +9,14 @@ from datetime import datetime
 # ==========================================
 # 1. PAGE CONFIGURATION & CUSTOM CSS
 # ==========================================
-st.set_page_config(page_title="₹1 Cr Equity Portfolio", page_icon="📈", layout="wide")
+# FIX: Added initial_sidebar_state="expanded" so it never hides automatically
+st.set_page_config(page_title="₹1 Cr Equity Portfolio", page_icon="📈", layout="wide", initial_sidebar_state="expanded")
 
-# Custom CSS for an Executive Dark Dashboard Look
 st.markdown("""
     <style>
-        /* Hide Streamlit default branding */
+        /* FIX: Removed header visibility:hidden so the sidebar toggle arrow is always visible */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
-        header {visibility: hidden;}
         
         /* Style the Metric Cards for Dark Theme */
         div[data-testid="stMetric"] {
