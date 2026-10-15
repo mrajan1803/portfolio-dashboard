@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from streamlit_gsheets import GSheetsConnection
 
 # 1. Page Configuration
 st.set_page_config(
@@ -13,23 +12,25 @@ st.set_page_config(
 st.title("📈 ₹1 Crore Simulated Indian Equity Portfolio")
 st.markdown("Live tracking of 15-stock allocation, P&L, and sector exposure.")
 
-# 2. Connect to Google Sheets
-conn = st.connection("gsheets", type=GSheetsConnection)
+# 2. Read directly from the Public Google Sheet (Bypassing Secrets!)
+# We use the specific GID for your Holdings tab: 1991889713
+sheet_csv_url = "https://docs.google.com/spreadsheets/d/1OzqcT2AWsknaZceIe06ph0yn904YDp7BViqEErgCGEw/export?format=csv&gid=1991889713"
 
 try:
-    # Read the 'Holdings' tab from your Google Sheet
-    df_holdings = conn.read(worksheet="Holdings", usecols=list(range(9)))
+    df_holdings = pd.read_csv(sheet_csv_url)
     df_holdings = df_holdings.dropna(subset=['Ticker']) # Remove empty rows
 except Exception as e:
-    st.error("Could not read the Google Sheet. Please check your connection secrets and ensure the sheet is shared as 'Anyone with the link can view'.")
+    st.error(f"Something went wrong reading the data: {e}")
     st.stop()
 
 # 3. Clean and Calculate Data
-# Ensure numeric columns are strictly numeric by stripping currency symbols and commas
 numeric_cols = ['Shares Held', 'Average Buy Price (INR)', 'Target Weight (%)', 
                 'Current Price (INR)', 'Market Value (INR)', 'Invested Cost (INR)', 'Unrealized P/L (INR)']
+
+# Convert columns to numbers safely
 for col in numeric_cols:
-    df_holdings[col] = pd.to_numeric(df_holdings[col].astype(str).str.replace(r'[₹,%]', '', regex=True), errors='coerce').fillna(0)
+    if col in df_holdings.columns:
+        df_holdings[col] = pd.to_numeric(df_holdings[col].astype(str).str.replace(r'[₹,%]', '', regex=True), errors='coerce').fillna(0)
 
 total_invested = df_holdings['Invested Cost (INR)'].sum()
 total_value = df_holdings['Market Value (INR)'].sum()
@@ -53,7 +54,7 @@ st.divider()
 st.subheader("Portfolio Composition")
 chart_col1, chart_col2 = st.columns(2)
 
-# Sector mapping based on your 15 chosen stocks
+# Sector mapping
 sector_mapping = {
     'HDFCBANK': 'Banking', 'ICICIBANK': 'Banking', 'RELIANCE': 'Energy & Retail',
     'BHARTIARTL': 'Telecom', 'LT': 'Industrials', 'SUNPHARMA': 'Healthcare',
@@ -64,7 +65,6 @@ sector_mapping = {
 df_holdings['Sector'] = df_holdings['Ticker'].map(sector_mapping)
 
 with chart_col1:
-    # Sector Allocation Donut Chart
     fig_sector = px.pie(
         df_holdings, 
         values='Market Value (INR)', 
@@ -75,7 +75,6 @@ with chart_col1:
     st.plotly_chart(fig_sector, use_container_width=True)
 
 with chart_col2:
-    # Stock Value Bar Chart
     df_sorted = df_holdings.sort_values(by='Market Value (INR)', ascending=True)
     fig_bar = px.bar(
         df_sorted, 
